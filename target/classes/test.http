@@ -1,0 +1,15 @@
+POST http://localhost:8082/api/login
+Content-Type: application/json
+
+{
+    "email": "shaxzodmailsender@gmail.com",
+    "password": "12345"
+}
+
+###
+GET http://localhost:8082/api/getRoles
+Accept: application/json
+
+###
+GET http://localhost:8082/api/hello
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaGF4em9kbWFpbHNlbmRlckBnbWFpbC5jb20iLCJpYXQiOjE2NzQ4MTY0ODQsImV4cCI6MTY3NDgyMDA4NH0.EJFXlpidpNo15gvGxzpgU_G6z2HMb0NwAGT04Fh29WscIP5rHpQdVUFwp0HhZDN6BLJRuu8Pv_w6cWB6aPxcFw
