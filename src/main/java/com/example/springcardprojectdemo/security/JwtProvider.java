@@ -8,10 +8,20 @@ import java.util.Date;
 
 @Component
 public class JwtProvider {
-    long expireTime = 60 * 60 * 1000;
+    long expireTime = 60 * 1000;
     String secretKey = "qwertyuiopasdfghjklzxcvbnm314159265358979323846264qwertyuiopasdfghjklzxcvbnm314159265358979323846264";
 
     public String generateToken(String email) {
+        return Jwts
+                .builder()
+                .setSubject(email)
+                .setIssuedAt(new Date())
+//                .setExpiration(new Date(System.currentTimeMillis() + expireTime))
+                .signWith(SignatureAlgorithm.HS512, secretKey)
+                .compact();
+    }
+
+    public String generateTokenWithTime(String email) {
         return Jwts
                 .builder()
                 .setSubject(email)

@@ -60,7 +60,6 @@ public class UserController {
         return ResponseEntity.ok().body(new ApiResponse("salom", true, card));
     }
 
-
     @PostMapping("/register")
     public HttpEntity<?> register(@RequestBody RegisterDto dto) {
         ApiResponse apiResponse = userService.register(dto);
