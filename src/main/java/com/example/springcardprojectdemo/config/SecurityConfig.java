@@ -1,6 +1,7 @@
 package com.example.springcardprojectdemo.config;
 
 import com.example.springcardprojectdemo.security.JwtFilter;
+import com.example.springcardprojectdemo.security.JwtFilter2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,8 @@ public class SecurityConfig {
     JwtFilter jwtFilter;
 
     @Autowired
+    JwtFilter2 jwtFilter2;
+    @Autowired
     AuthenticationProvider authenticationProvider;
 
     @Bean
@@ -26,10 +29,11 @@ public class SecurityConfig {
                 .cors().and()
                 .csrf().disable()
                 .authorizeRequests()
-                .requestMatchers("/" ,"/api/login", "/api/register", "/api/register/verify", "/api/f_password").permitAll()
+                .requestMatchers("/" ,"/api/login", "/api/register", "/api/f_password").permitAll()
                 .requestMatchers("/api/hello2").permitAll()
                 .anyRequest()
                 .authenticated();
+        http.addFilterBefore(jwtFilter2, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authenticationProvider(authenticationProvider);

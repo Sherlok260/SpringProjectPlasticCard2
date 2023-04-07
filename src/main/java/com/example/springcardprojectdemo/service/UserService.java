@@ -1,16 +1,19 @@
 package com.example.springcardprojectdemo.service;
 
+import com.example.springcardprojectdemo.entity.Token;
 import com.example.springcardprojectdemo.entity.User;
 import com.example.springcardprojectdemo.entity.Verify;
 import com.example.springcardprojectdemo.payload.ApiResponse;
 import com.example.springcardprojectdemo.payload.LoginDto;
 import com.example.springcardprojectdemo.payload.RegisterDto;
 import com.example.springcardprojectdemo.repository.RoleRepository;
+import com.example.springcardprojectdemo.repository.TokenRepository;
 import com.example.springcardprojectdemo.repository.UserRepository;
 import com.example.springcardprojectdemo.repository.VerifyRepository;
-import com.example.springcardprojectdemo.security.JwtFilter;
+import com.example.springcardprojectdemo.security.JwtFilter2;
 import com.example.springcardprojectdemo.security.JwtProvider;
 import com.example.springcardprojectdemo.utills.CommonUtills;
+import freemarker.log.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,107 +27,199 @@ import java.util.Optional;
 public class UserService {
 
     @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
     UserRepository userRepository;
 
     @Autowired
-    VerifyRepository verifyRepository;
+    AuthenticationManager authenticationManager;
 
     @Autowired
-    MailService mailService;
-
-    @Autowired
-    JwtProvider jwtProvider;
+    PasswordEncoder passwordEncoder;
 
     @Autowired
     RoleRepository roleRepository;
 
     @Autowired
-    AuthenticationManager authenticationManager;
+    JwtProvider jwtProvider;
+
+    @Autowired
+    TokenRepository tokenRepository;
+
+    @Autowired
+    MailService mailService;
+
+    @Autowired
+    VerifyRepository verifyRepository;
 
     public ApiResponse login(LoginDto dto) {
-        System.out.println(dto);
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                dto.getEmail(),
-                dto.getPassword()));
-        String token = jwtProvider.generateToken(dto.getEmail());
-        System.out.println(token);
-        return new ApiResponse("foydalanuvchi", true, token);
-    }
-
-    public ApiResponse f_password(String email) {
         try {
-            int new_verify_code = CommonUtills.generateCode();
-            verifyRepository.save(new Verify((long) new_verify_code, email));
-            mailService.sendTextt(email, String.valueOf(new_verify_code));
-            return new ApiResponse("recovery code is sending", true, jwtProvider.generateToken(email));
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                    dto.getEmail(),
+                    dto.getPassword()));
+            List<Token> token = userRepository.findByEmail(dto.getEmail()).get().getTokens();
+            for (Token t: token) {
+                if (t.getLevel().equals("valid")) {
+                    return new ApiResponse("success", true, t.getToken());
+                }
+            }
+            return new ApiResponse("User name or password incorrect", false);
         } catch (Exception e) {
-            return new ApiResponse(e.getMessage(), false);
-        }
-    }
-
-    public ApiResponse v_f_password(long v_code) {
-        String email = JwtFilter.getEmailWithToken;
-        if (verifyRepository.findByEmail(email).get().getVerifyCode().equals(v_code)) {
-            verifyRepository.deleteByEmail(email);
-            return new ApiResponse("Recovery code is true. Please enter new code for your account", true);
-        } else return new ApiResponse("recovery code is incorrect", false);
-    }
-
-    public ApiResponse set_new_password(String new_password) {
-        try {
-            String email = JwtFilter.getEmailWithToken;
-            userRepository.updatePassword(email, passwordEncoder.encode(new_password));
-            return new ApiResponse("password replace is successfully", true);
-        } catch (Exception e) {
-            return new ApiResponse(e.getMessage(), false);
+            e.printStackTrace();
+            return new ApiResponse("User name or password incorrect", false);
         }
     }
 
     public ApiResponse register(RegisterDto dto) {
-        String token = jwtProvider.generateToken(dto.getEmail());
-        System.out.println(token);
-        Optional<User> byEmail = userRepository.findByEmail(dto.getEmail());
-        Long code = (long) CommonUtills.generateCode();
-        User new_user = new User(dto.getFirstName(),
-                dto.getLastName(),
-                dto.getEmail(),
-                passwordEncoder.encode(dto.getPassword()),
-                roleRepository.findByName("GUEST").get(),
-                true, false);
 
-        if(byEmail.isPresent()) {
-            if (byEmail.get().isVerified()) {
-                return new ApiResponse("This email is already registered", false);
+        try {
+
+            Token temporary_token = new Token(
+                    jwtProvider.generateTokenWithTime(dto.getEmail()),
+                    dto.getEmail(), "temporary");
+
+            User new_user = new User(dto.getFirstName(),
+                    dto.getLastName(), dto.getEmail(),
+                    passwordEncoder.encode(dto.getPassword()),
+                    List.of(roleRepository.findByName("GUEST").get()),
+                    true, false);
+
+            Optional<User> user_in_db = userRepository.findByEmail(dto.getEmail());
+            if (user_in_db.isPresent()) {
+                if (user_in_db.get().isVerified()) {
+                    return new ApiResponse("This user is already registered", false);
+                } else {
+                    Optional<Verify> verify_in_db = verifyRepository.findByEmail(dto.getEmail());
+                    if (verify_in_db.isPresent()) {
+                        verifyRepository.deleteByEmail(dto.getEmail());
+                    }
+                    Optional<List<Token>> token_in_db = tokenRepository.findByEmail(dto.getEmail());
+                    if (token_in_db.isPresent()) {
+                        userRepository.deleteTokenIdFromUser(userRepository.getUserIdByEmail(dto.getEmail()));
+                        tokenRepository.deleteTemporaryTokenByEmail(dto.getEmail());
+                    }
+                    userRepository.deleteByEmail(dto.getEmail());
+                    return save_register_info(new_user, temporary_token, dto);
+                }
             } else {
-                userRepository.deleteFromRole(userRepository.findByEmail(dto.getEmail()).get().getId());
-                userRepository.deleteByEmail(dto.getEmail());
-                userRepository.save(new_user);
-                verifyRepository.deleteByEmail(dto.getEmail());
-                verifyRepository.save(new Verify(code, dto.getEmail()));
-                mailService.sendTextt(dto.getEmail(), code.toString());
-                return new ApiResponse("Code is sending", true, token);
+                return save_register_info(new_user, temporary_token, dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ApiResponse(e.getMessage(), false);
+        }
+    }
+
+    public ApiResponse save_register_info(User new_user, Token temporary_token, RegisterDto dto) {
+        try {
+
+            new_user.setTokens(List.of(tokenRepository.save(temporary_token)));
+            userRepository.save(new_user);
+            Long verify_code = (long) CommonUtills.generateCode();
+            Verify verify = new Verify(verify_code, dto.getEmail());
+            verifyRepository.save(verify);
+            mailService.sendTextt(dto.getEmail(), String.valueOf(verify_code));
+
+            return new ApiResponse("Verify code is sending", true, temporary_token.getToken());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ApiResponse(e.getMessage(), false);
+        }
+    }
+
+    public ApiResponse f_password(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if(user.isPresent()) {
+            if(user.get().isVerified()) {
+                int code = CommonUtills.generateCode();
+                verifyRepository.save(new Verify((long) code, email));
+                mailService.sendTextt(user.get().getEmail(), "Code to restore your account: " + code);
+                String token = jwtProvider.generateToken(email);
+                Token temporary_token = tokenRepository.save(new Token(token, email, "temporary"));
+                user.get().addToken(temporary_token);
+                userRepository.save(user.get());
+                return new ApiResponse("forget password sending", true, temporary_token.getToken());
+            } else {
+                return new ApiResponse("forget password sending", true, "account not verified");
             }
         } else {
-            System.out.println(new_user);
+            return new ApiResponse("forget password sending", true, "account not found");
+        }
+    }
 
-            userRepository.save(new_user);
-            verifyRepository.save(new Verify(code, dto.getEmail()));
-            mailService.sendTextt(dto.getEmail(), code.toString());
-            return new ApiResponse("Code is sending for new user", true, token);
+    public ApiResponse v_f_password(long v_code) {
+        String token = JwtFilter2.getToken;
+        Optional<Token> token_details = tokenRepository.findByToken(token);
+        if (token_details.get().getLevel().equals("temporary")) {
+            String email = JwtFilter2.getEmailWithToken;
+            Optional<Verify> verify_details = verifyRepository.findByEmail(email);
+            if(verify_details.isPresent()) {
+                if(verify_details.get().getVerifyCode().equals(v_code)) {
+                    return new ApiResponse("verify true", true);
+                } else {
+                    return new ApiResponse("verify code is incorrect", false);
+                }
+            } else {
+                return new ApiResponse("something wrong", false);
+            }
+        } else {
+            return new ApiResponse("token failed", false);
+        }
+    }
+
+    public ApiResponse set_new_password(String new_password, long v_code) {
+        String token = JwtFilter2.getToken;
+        Optional<Token> token_details = tokenRepository.findByToken(token);
+        if (token_details.get().getLevel().equals("temporary")) {
+            String email = JwtFilter2.getEmailWithToken;
+            Optional<Verify> verify_details = verifyRepository.findByEmail(email);
+            if(verify_details.isPresent()) {
+                if(verify_details.get().getVerifyCode().equals(v_code)) {
+                    User user = userRepository.findByEmail(email).get();
+                    userRepository.deleteTokenIdFromUser(user.getId());
+                    tokenRepository.deleteTemporaryTokenByToken(token);
+                    verifyRepository.deleteByEmail(email);
+                    user.setPassword(passwordEncoder.encode(new_password));
+                    userRepository.save(user);
+                    return new ApiResponse("Password successfully changed", true);
+                } else {
+                    return new ApiResponse("something wrong", false);
+                }
+            } else {
+                return new ApiResponse("something wrong", false);
+            }
+        } else {
+            return new ApiResponse("token failed", false);
         }
     }
 
     public ApiResponse verify(Long code) {
-        String getEmailWithToken = JwtFilter.getEmailWithToken;
-        if (verifyRepository.findByEmail(getEmailWithToken).get().getVerifyCode().equals(code)) {
-            userRepository.updateVerifyAndRoleWithEmail(userRepository.findByEmail(getEmailWithToken).get().getId());
-            userRepository.updateVerifyTrue(getEmailWithToken);
-            verifyRepository.deleteByEmail(getEmailWithToken);
-            return new ApiResponse("Verification is success", true);
-        } else return new ApiResponse("verify code is incorrect", false);
+
+        String token = JwtFilter2.getToken;
+        Optional<Token> token_details = tokenRepository.findByToken(token);
+        if (token_details.get().getLevel().equals("temporary")) {
+            String email = JwtFilter2.getEmailWithToken;
+            Optional<Verify> verify_details = verifyRepository.findByEmail(email);
+            if(verify_details.isPresent()) {
+                if(verify_details.get().getVerifyCode().equals(code)) {
+                    Long user_id = userRepository.getUserIdByEmail(email);
+                    userRepository.deleteTokenIdFromUser(userRepository.getUserIdByEmail(email));
+                    tokenRepository.deleteTemporaryTokenByEmail(email);
+                    Token valid_token = tokenRepository.save(new Token(jwtProvider.generateToken(email), email, "valid"));
+                    userRepository.setTokenIdForUser(user_id, valid_token.getId());
+                    userRepository.updateVerifyAndRoleWithEmail(user_id);
+                    userRepository.updateVerifyTrue(email);
+                    verifyRepository.deleteByEmail(email);
+                    return new ApiResponse("Verification is success", true);
+                } else {
+                    return new ApiResponse("Verify code is incorrect", false);
+                }
+            } else {
+                Logger logger = Logger.getLogger(UserService.class.getName());
+                logger.info("verify details: \n" + verify_details.get() + "\n");
+                return new ApiResponse("verify db something wrong", false);
+            }
+        } else {
+            return new ApiResponse("token failed", false);
+        }
     }
 
     public List<User> getUsers() {

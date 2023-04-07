@@ -8,7 +8,7 @@ import java.util.Date;
 
 @Component
 public class JwtProvider {
-    long expireTime = 60 * 1000;
+    long expireTime = 600 * 1000;
     String secretKey = "qwertyuiopasdfghjklzxcvbnm314159265358979323846264qwertyuiopasdfghjklzxcvbnm314159265358979323846264";
 
     public String generateToken(String email) {

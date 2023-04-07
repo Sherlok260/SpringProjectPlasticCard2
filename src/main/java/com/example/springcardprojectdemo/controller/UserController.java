@@ -4,6 +4,7 @@ import com.example.springcardprojectdemo.entity.Card;
 import com.example.springcardprojectdemo.payload.ApiResponse;
 import com.example.springcardprojectdemo.payload.LoginDto;
 import com.example.springcardprojectdemo.payload.RegisterDto;
+import com.example.springcardprojectdemo.payload.newPasswordDto;
 import com.example.springcardprojectdemo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -40,8 +41,8 @@ public class UserController {
 
     @PostMapping("/new_password")
     @PreAuthorize(value = "hasRole('USER')")
-    public HttpEntity<?> new_password(@RequestParam String password) {
-        ApiResponse apiResponse = userService.set_new_password(password);
+    public HttpEntity<?> new_password(@RequestBody newPasswordDto dto) {
+        ApiResponse apiResponse = userService.set_new_password(dto.getNew_password(), dto.getV_code());
         return ResponseEntity.ok().body(apiResponse);
     }
 

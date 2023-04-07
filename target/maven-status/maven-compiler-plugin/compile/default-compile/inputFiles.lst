@@ -14,6 +14,7 @@ C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\spri
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\config\SecurityConfig.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\payload\TransferDto.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\SpringCardProjectDemoApplication.java
+C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\security\JwtFilter2.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\entity\History.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\payload\LoginDto.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\controller\MailController.java
@@ -25,5 +26,9 @@ C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\spri
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\repository\VerifyRepository.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\payload\ApiResponse.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\payload\CardDto.java
+C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\entity\Token.java
+C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\payload\newPasswordDto.java
+C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\repository\TokenRepository.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\repository\RoleRepository.java
 C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\repository\HistoriesRepository.java
+C:\Users\Sherlock\Pictures\SpringCardProjectDemo2\src\main\java\com\example\springcardprojectdemo\config\SecurityConfig2.java

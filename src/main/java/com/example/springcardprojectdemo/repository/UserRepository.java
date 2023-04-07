@@ -40,4 +40,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query(value = "insert into users_histories values(?1, ?2)", nativeQuery = true)
     void addHistoryToUser(Long user_id, Long history_id);
+
+    @Transactional
+    @Modifying
+    @Query(value = "delete from users_tokens where users_id = ?1", nativeQuery = true)
+    void deleteTokenIdFromUser(Long user_id);
+
+    @Transactional
+    @Modifying
+    @Query(value = "insert into users_tokens(users_id, tokens_id) values (?1, ?2)", nativeQuery = true)
+    void setTokenIdForUser(Long user_id, Long token_id);
+
+    @Query(value = "select id from users where email = ?1", nativeQuery = true)
+    Long getUserIdByEmail(String email);
 }
